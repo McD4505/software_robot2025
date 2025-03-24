@@ -60,8 +60,17 @@ public class RobotContainer {
     // cancelling on release.
 
     //m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
-    controller.leftBumper().onFalse(new InstantCommand(() -> tankDrivetrain.setAll(0)));
-    controller.leftBumper().onTrue(new InstantCommand(() -> tankDrivetrain.setAll(0.5)));
+    //FIX THIS !!!!
+    // tankDrivetrain.setDefaultCommand(tankDrivetrain.setAll(setSpeed(controller.getLeftY()), setSpeed(controller.getRightY())));
+    tankDrivetrain.setDefaultCommand(tankDrivetrain.setAllCommand(
+      () -> controller.getLeftY(), 
+      () -> controller.getRightY()));
+
+  }
+
+  public double setSpeed(double controllerInput) {
+    return Math.pow(controllerInput, 3); 
+    
   }
 
   /**

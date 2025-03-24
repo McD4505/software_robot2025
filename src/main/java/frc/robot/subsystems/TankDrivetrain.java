@@ -8,7 +8,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import edu.wpi.first.wpilibj.AnalogGyro;
 //WPIlib Imports
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -22,6 +22,7 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.Supplier;
 
 import org.ejml.dense.row.linsol.qr.LinearSolverQrHouseCol_MT_FDRM;
 
@@ -49,6 +50,14 @@ public class TankDrivetrain extends SubsystemBase {
   private final SparkMax rightFront = new SparkMax(2, MotorType.kBrushless);
   private final SparkMax leftBack = new SparkMax(3, MotorType.kBrushless);
   private final SparkMax rightBack = new SparkMax(4, MotorType.kBrushless);
+  
+  private double kP = 0.05;
+  Pigeon1
+
+  
+
+
+
   //private final DifferentialDrive m_robotDrive;
 
   /** Creates a new ExampleSubsystem. */
@@ -58,10 +67,10 @@ public class TankDrivetrain extends SubsystemBase {
     driveMotors.put("lb", leftBack);
     driveMotors.put("rb", rightBack);
 
-    zRelativeEncoder("lf");
-    zRelativeEncoder("rf");
-    zRelativeEncoder("lb");
-    zRelativeEncoder("rb");
+    zeroRelativeEncoder("lf");
+    zeroRelativeEncoder("rf");
+    zeroRelativeEncoder("lb");
+    zeroRelativeEncoder("rb");
     configureLeft();
     configureRight();
 
@@ -81,10 +90,10 @@ public class TankDrivetrain extends SubsystemBase {
         });
   }
 
-  public RelativeEncoder gRelativeEncoder(String sparkMax) {
+  public RelativeEncoder getRelativeEncoder(String sparkMax) {
     return driveMotors.get(sparkMax).getEncoder();
   }
-  public void zRelativeEncoder(String sparkMax) {
+  public void zeroRelativeEncoder(String sparkMax) {
     driveMotors.get(sparkMax).getEncoder().setPosition(0);
   }
 
@@ -92,11 +101,21 @@ public class TankDrivetrain extends SubsystemBase {
     driveMotors.get(sparkMax).set(speed);
   }
 
-  public void setAll(double speed) {
-    driveMotors.get("lf").set(speed);
-    driveMotors.get("rf").set(speed);
-    driveMotors.get("lb").set(speed);
-    driveMotors.get("rb").set(speed);
+
+  public Command setAllCommand(Supplier<Double> speedLeftSupplier, Supplier<Double> speedRightSupplier) {
+    return run(() -> setAll(speedLeftSupplier, speedRightSupplier));
+  }
+  public void setAll(Supplier<Double> speedLeftSupplier, Supplier<Double> speedRightSupplier) {
+    double speedLeft = speedLeftSupplier.get();
+    double speedRight = speedRightSupplier.get();
+
+    speedLeft = Math.abs(speedLeft) < 0.05 ? 0 : speedLeft;
+    speedRight = Math.abs(speedRight) < 0.05 ? 0 : speedRight;
+
+    driveMotors.get("lf").set(speedLeft);
+    driveMotors.get("rf").set(speedRight);
+    driveMotors.get("lb").set(speedLeft);
+    driveMotors.get("rb").set(speedRight); 
   }
   private void configureLeft() {
     SparkMaxConfig config = new SparkMaxConfig();
@@ -104,10 +123,13 @@ public class TankDrivetrain extends SubsystemBase {
     config
       .inverted(false)
       .idleMode(IdleMode.kBrake);
+      
 
     driveMotors.get("lf").configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    driveMotors.get("lb").configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
  
   }
+
   private void configureRight() {
     SparkMaxConfig config = new SparkMaxConfig();
 
